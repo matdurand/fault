@@ -73,8 +73,10 @@ func (f *container) Format(s fmt.State, verb rune) {
 				if v.Message != "" {
 					fmt.Fprintf(s, "%s\n", v.Message)
 				}
-				if v.Location != "" {
-					fmt.Fprintf(s, "\t%s\n", v.Location)
+				if len(v.Locations) > 0 {
+					for i := len(v.Locations) - 1; i >= 0; i-- {
+						fmt.Fprintf(s, "\t%s\n", v.Locations[i])
+					}
 				}
 			}
 			return

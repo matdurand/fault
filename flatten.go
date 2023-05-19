@@ -14,8 +14,8 @@ type Chain []Step
 // message is present if the underlying error provided a message. Note that not
 // all errors provide errors or locations. If both are missing, it's omitted.
 type Step struct {
-	Location string
-	Message  string
+	Locations []string
+	Message   string
 }
 
 // Flatten attempts to derive more useful structured information from an error
@@ -33,7 +33,7 @@ func Flatten(err error) Chain {
 		err = errors.Unwrap(err)
 	}
 
-	lastLocation := ""
+	locations := []string{}
 
 	var f Chain
 	for i := 0; i < len(flat); i++ {
@@ -49,7 +49,15 @@ func Flatten(err error) Chain {
 		// exist to contain other errors that actually contain information,
 		// store the container's recorded location for usage with the next item.
 		case *container:
-			lastLocation = unwrapped.location
+			locations = append(locations, unwrapped.location)
+
+		case *fundamental:
+			f = append([]Step{{
+				Locations: append(locations, unwrapped.location),
+				Message:   err.Error(),
+			}}, f...)
+
+			locations = []string{}
 
 		default:
 			message := err.Error()
@@ -68,11 +76,11 @@ func Flatten(err error) Chain {
 			}
 
 			f = append([]Step{{
-				Location: lastLocation,
-				Message:  message,
+				Locations: locations,
+				Message:   message,
 			}}, f...)
 
-			lastLocation = ""
+			locations = []string{}
 		}
 	}
 
